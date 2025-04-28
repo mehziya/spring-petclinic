@@ -17,7 +17,7 @@ pipeline {
     stages {
         stage('Checkout Repository') {
             steps {
-                git branch: 'master', url: 'https://oauth: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@github.com/NubeEra-ImranAli/spring-petclinic.git'
+                git branch: 'main', url: 'https://oauth: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@github.com/NubeEra-ImranAli/spring-petclinic.git'
                 sh 'git status'
             }
         }
