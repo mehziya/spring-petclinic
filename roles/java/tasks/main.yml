@@ -58,3 +58,9 @@
     name: tomcat
     enabled: yes
     state: started
+- name: Copy application.properties with MySQL IP
+  template:
+    src: application.properties.j2
+    dest: /opt/tomcat/webapps/spring-boot-war-example/WEB-INF/classes/application.properties
+  vars:
+    mysql_host: "{{ hostvars['mysql_server'].ansible_host }}"
