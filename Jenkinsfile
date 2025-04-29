@@ -37,13 +37,13 @@ pipeline {
                     def output = sh(script: 'terraform output -json', returnStdout: true).trim()
                     def tfOutput = readJSON text: output
 
-                    if (!tfOutput?.tomcat_public_ip?.value || !tfOutput?.mysql_public_ip?.value || !tfOutput?.maven_public_ip?.value) {
+                    if (!tfOutput?.tomcat_server_ip?.value || !tfOutput?.mysql_server_ip?.value || !tfOutput?.maven_server_ip?.value) {
                         error "❌ One or more Terraform outputs are missing."
                     }
 
-                    def tomcatIp = tfOutput.tomcat_public_ip.value
-                    def mysqlIp = tfOutput.mysql_public_ip.value
-                    def mavenIp = tfOutput.maven_public_ip.value
+                    def tomcatIp = tfOutput.tomcat_server_ip.value
+                    def mysqlIp = tfOutput.mysql_server_ip.value
+                    def mavenIp = tfOutput.maven_server_ip.value
 
                     writeFile file: 'ansible/inventory.ini', text: """
 [tomcat_server]
@@ -85,8 +85,8 @@ ${mavenIp} ansible_user=ubuntu ansible_ssh_private_key_file=${SSH_PRIVATE_KEY_PA
         stage('Deploy WAR to Tomcat') {
             steps {
                 script {
-                    def tomcatIp = sh(script: "terraform output -raw tomcat_public_ip", returnStdout: true).trim()
-                    def mavenIp = sh(script: "terraform output -raw maven_public_ip", returnStdout: true).trim()
+                    def tomcatIp = sh(script: "terraform output -raw tomcat_server_ip", returnStdout: true).trim()
+                    def mavenIp = sh(script: "terraform output -raw maven_server_ip", returnStdout: true).trim()
 
                     sh """
                     ssh -o StrictHostKeyChecking=no -i ${SSH_PRIVATE_KEY_PATH} ubuntu@${mavenIp} \
