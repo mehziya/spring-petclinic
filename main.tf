@@ -37,3 +37,4 @@ output "mysql_server_ip" {
 }
 output "maven_server_ip" {
   value = aws_instance.maven_server.public_ip
+}
