@@ -8,8 +8,8 @@ pipeline {
     }
 
     environment {
-        AWS_ACCESS_KEY = credentials('AWS_KEY')
-        AWS_SECRET_KEY = credentials('AWS_SECRET')
+        AWS_ACCESS_KEY = credentials('AWS_ACCESS_KEY')
+        AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
         SSH_PRIVATE_KEY_PATH = "~/.ssh/mujahed.pem"
     }
 
