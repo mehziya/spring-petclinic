@@ -1,0 +1,18 @@
+---
+- name: Setup Java and Tomcat
+  hosts: tomcat_server
+  become: yes
+  roles:
+    - java_tomcat
+
+- name: Setup MySQL
+  hosts: mysql_server
+  become: yes
+  roles:
+    - mysql
+
+- name: Setup Maven
+  hosts: maven_server
+  become: yes
+  roles:
+    - maven

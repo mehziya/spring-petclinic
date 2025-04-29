@@ -1,0 +1,23 @@
+- name: Install MySQL
+  apt:
+    name: mysql-server
+    state: present
+    update_cache: yes
+
+- name: Start MySQL
+  service:
+    name: mysql
+    state: started
+    enabled: yes
+
+- name: Create application DB and user
+  mysql_db:
+    name: petclinic
+    state: present
+
+- name: Create application DB user
+  mysql_user:
+    name: petclinic_user
+    password: petclinic_pass
+    priv: 'petclinic.*:ALL'
+    state: present

@@ -1,0 +1,60 @@
+- name: Install Java
+  apt:
+    name: openjdk-17-jdk
+    state: present
+    update_cache: yes
+
+- name: Create Tomcat user
+  user:
+    name: tomcat
+    shell: /bin/false
+
+- name: Download Tomcat
+  get_url:
+    url: https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.82/bin/apache-tomcat-9.0.82.tar.gz
+    dest: /tmp/tomcat.tar.gz
+
+- name: Extract Tomcat
+  unarchive:
+    src: /tmp/tomcat.tar.gz
+    dest: /opt/
+    remote_src: yes
+
+- name: Rename Tomcat directory
+  command: mv /opt/apache-tomcat-9.0.82 /opt/tomcat
+  args:
+    creates: /opt/tomcat
+
+- name: Change ownership
+  file:
+    path: /opt/tomcat
+    state: directory
+    owner: tomcat
+    group: tomcat
+    recurse: yes
+
+- name: Create systemd service
+  copy:
+    dest: /etc/systemd/system/tomcat.service
+    content: |
+      [Unit]
+      Description=Apache Tomcat
+      After=network.target
+
+      [Service]
+      Type=forking
+      User=tomcat
+      Group=tomcat
+      ExecStart=/opt/tomcat/bin/startup.sh
+      ExecStop=/opt/tomcat/bin/shutdown.sh
+      Restart=always
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Reload systemd and start Tomcat
+  systemd:
+    daemon_reload: yes
+    name: tomcat
+    enabled: yes
+    state: started
