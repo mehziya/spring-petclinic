@@ -20,9 +20,9 @@ pipeline {
             }
         }
 
-        stage('Terraform Provisioning') {
+        stage('Setup Terraform') {
             steps {
-                dir('terraform') {
+                script {
                     sh '''
                     terraform init
                     terraform apply -auto-approve
