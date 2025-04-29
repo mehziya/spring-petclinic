@@ -34,8 +34,12 @@ pipeline {
         stage('Generate Ansible Inventory') {
             steps {
                 script {
-                    def output = sh(script: 'terraform -chdir=terraform output -json', returnStdout: true).trim()
+                    def output = sh(script: 'terraform output -json', returnStdout: true).trim()
                     def tfOutput = readJSON text: output
+
+                    if (!tfOutput?.tomcat_public_ip?.value || !tfOutput?.mysql_public_ip?.value || !tfOutput?.maven_public_ip?.value) {
+                        error "❌ One or more Terraform outputs are missing."
+                    }
 
                     def tomcatIp = tfOutput.tomcat_public_ip.value
                     def mysqlIp = tfOutput.mysql_public_ip.value
@@ -84,13 +88,11 @@ ${mavenIp} ansible_user=ubuntu ansible_ssh_private_key_file=${SSH_PRIVATE_KEY_PA
                     def tomcatIp = sh(script: "terraform output -raw tomcat_public_ip", returnStdout: true).trim()
                     def mavenIp = sh(script: "terraform output -raw maven_public_ip", returnStdout: true).trim()
 
-                    // Copy WAR file from Maven server to Jenkins workspace
                     sh """
                     ssh -o StrictHostKeyChecking=no -i ${SSH_PRIVATE_KEY_PATH} ubuntu@${mavenIp} \
                         'scp -o StrictHostKeyChecking=no /home/ubuntu/spring-petclinic/target/spring-petclinic.war ubuntu@${tomcatIp}:/opt/tomcat/webapps/'
                     """
 
-                    // Restart Tomcat
                     sh "ansible tomcat_server -i ansible/inventory.ini -m systemd -a 'name=tomcat state=restarted'"
                 }
             }
