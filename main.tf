@@ -12,7 +12,7 @@ resource "aws_instance" "tomcat_server" {
 }
 resource "aws_instance" "mysql_server"{
     ami="ami-084568db4383264d4"
-    nstance_type = "t2.micro"
+    instance_type = "t2.micro"
     security_groups = ["sgalltraffic"]  # Reference the existing security group
     key_name      = "mujahed"
     tags = {
