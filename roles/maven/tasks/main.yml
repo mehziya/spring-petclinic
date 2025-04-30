@@ -28,3 +28,22 @@
     content: |
       export M2_HOME=/opt/maven
       export PATH=${M2_HOME}/bin:${PATH}
+      
+- name: Install Maven
+  apt:
+    name: maven
+    state: present
+    update_cache: yes
+  become: true
+
+
+- name: Clone project
+  git:
+    repo: 'https://github.com/mehziya/spring-petclinic.git'
+    dest: /home/ubuntu/app
+
+- name: Build WAR file
+  command: mvn package
+  args:
+    chdir: /home/ubuntu/app
+
