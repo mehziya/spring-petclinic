@@ -116,12 +116,12 @@ pipeline {
         stage('Build WAR with Maven') {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'mujahed-ssh-key', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')]) {
-                    sh """
+                    sh '''
                         ssh -o StrictHostKeyChecking=no -i \$SSH_KEY_FILE \$SSH_USER@$(terraform output -raw maven_server_ip) '
                             cd /home/ubuntu/app &&
                             mvn clean package
                         '
-                    """
+                    '''
                 }
             }
         }
