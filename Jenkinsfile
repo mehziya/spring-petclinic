@@ -10,6 +10,7 @@ pipeline {
     environment {
         AWS_ACCESS_KEY = credentials('AWS_ACCESS_KEY')
         AWS_SECRET_KEY = credentials('AWS_SECRET_ACCESS_KEY')
+        SSH_PRIVATE_KEY_PATH = "~/.ssh/mujahed.pem"
     }
 
     stages {
@@ -124,16 +125,17 @@ stage('Verify Ansible Connectivity') {
 
         stage('Build WAR with Maven') {
             steps {
-                withCredentials([sshUserPrivateKey(credentialsId: 'mujahed-ssh-key', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')]) {
-                    sh '''
-                        ssh -o StrictHostKeyChecking=no -i \$SSH_KEY_FILE \$SSH_USER@$(terraform output -raw maven_server_ip) '
+                script {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_PRIVATE_KEY_PATH} ubuntu@\$(terraform output -raw maven_server_ip) '
                             cd /home/ubuntu/app &&
                             mvn clean package
                         '
-                    '''
+                    """
                 }
             }
         }
+
 
         stage('Deploy WAR to Tomcat') {
             steps {
