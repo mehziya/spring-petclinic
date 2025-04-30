@@ -30,7 +30,7 @@ pipeline {
 
         stage('Generate Inventory') {
     steps {
-        withCredentials([sshUserPrivateKey(credentialsId: 'your-ssh-key-id', keyFileVariable: 'SSH_KEY_FILE')]) {
+        withCredentials([sshUserPrivateKey(credentialsId: 'mujahed-ssh-key', keyFileVariable: 'SSH_KEY_FILE')]) {
     sh """
     echo [tomcat_server] > inventory
     echo "\$(terraform output -raw tomcat_server_ip) ansible_user=ubuntu ansible_ssh_private_key_file=${SSH_KEY_FILE} ansible_python_interpreter=/usr/bin/python3" >> inventory
