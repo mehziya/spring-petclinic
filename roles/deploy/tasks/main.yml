@@ -1,50 +1,50 @@
-- name: Fetch JAR from Maven server
+- name: Fetch WAR from Maven server
   fetch:
-    src: /home/ubuntu/app/target/spring-petclinic-3.1.0.jar
-    dest: /tmp/spring-petclinic.jar
+    src: /home/ubuntu/app/target/yourapp.war
+    dest: /tmp/yourapp.war
     flat: yes
   delegate_to: "{{ groups['maven_server'][0] }}"
 
-- name: Check if JAR file exists
+- name: Check if WAR file exists
   stat:
-    path: /tmp/spring-petclinic.jar
-  register: jar_file_stat
+    path: /tmp/yourapp.war
+  register: war_file_stat
 
-- name: Fail if JAR file does not exist
+- name: Fail if WAR file does not exist
   fail:
-    msg: "JAR file does not exist, aborting deployment."
-  when: not jar_file_stat.stat.exists
+    msg: "WAR file does not exist, aborting deployment."
+  when: not war_file_stat.stat.exists
 
-- name: Stop running Spring Boot app (if any)
-  shell: |
-    pkill -f 'spring-petclinic.jar' || true
-  ignore_errors: yes
+- name: Stop Tomcat
+  systemd:
+    name: tomcat
+    state: stopped
+    enabled: yes
 
-- name: Create app directory if it doesn't exist
+- name: Remove old WAR file from Tomcat webapps
   file:
-    path: /opt/spring-petclinic
-    state: directory
-    owner: ubuntu
-    group: ubuntu
-    mode: '0755'
+    path: /opt/tomcat/webapps/yourapp.war
+    state: absent
 
-- name: Copy JAR to target server
+- name: Copy WAR to Tomcat
   copy:
-    src: /tmp/spring-petclinic.jar
-    dest: /opt/spring-petclinic/spring-petclinic.jar
+    src: /tmp/yourapp.war
+    dest: /opt/tomcat/webapps/yourapp.war
     owner: ubuntu
     group: ubuntu
-    mode: '0755'
+    mode: '0644'
 
 - name: Update application.properties for MySQL IP
   lineinfile:
-    path: /opt/spring-petclinic/application.properties
+    path: /opt/tomcat/webapps/yourapp/WEB-INF/classes/application.properties
     regexp: '^spring.datasource.url='
     line: 'spring.datasource.url=jdbc:mysql://{{ hostvars[groups["mysql_server"][0]]["ansible_host"] }}:3306/yourdb'
-  create: yes
 
-- name: Start Spring Boot app in background
-  shell: |
-    nohup java -jar /opt/spring-petclinic/spring-petclinic.jar --spring.config.location=/opt/spring-petclinic/application.properties > /opt/spring-petclinic/app.log 2>&1 &
-  args:
-    chdir: /opt/spring-petclinic
+- name: Start Tomcat
+  systemd:
+    name: tomcat
+    state: started
+    enabled: yes
+
+
+
