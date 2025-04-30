@@ -1,0 +1,47 @@
+- name: Fetch WAR from Maven server
+  fetch:
+    src: /home/ubuntu/app/target/yourapp.war
+    dest: /tmp/yourapp.war
+    flat: yes
+  delegate_to: "{{ groups['maven'][0] }}"
+
+- name: Check if WAR file exists
+  stat:
+    path: /tmp/yourapp.war
+  register: war_file_stat
+
+- name: Fail if WAR file does not exist
+  fail:
+    msg: "WAR file does not exist, aborting deployment."
+  when: not war_file_stat.stat.exists
+
+- name: Stop Tomcat
+  systemd:
+    name: tomcat
+    state: stopped
+    enabled: yes
+
+- name: Remove old WAR file from Tomcat webapps
+  file:
+    path: /opt/tomcat/webapps/yourapp.war
+    state: absent
+
+- name: Copy WAR to Tomcat
+  copy:
+    src: /tmp/yourapp.war
+    dest: /opt/tomcat/webapps/yourapp.war
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+
+- name: Update application.properties for MySQL IP
+  lineinfile:
+    path: /opt/tomcat/webapps/yourapp/WEB-INF/classes/application.properties
+    regexp: '^spring.datasource.url='
+    line: 'spring.datasource.url=jdbc:mysql://{{ hostvars[groups["mysql"][0]]["ansible_host"] }}:3306/yourdb'
+
+- name: Start Tomcat
+  systemd:
+    name: tomcat
+    state: started
+    enabled: yes
