@@ -1,18 +1,20 @@
----
-- name: Setup Java and Tomcat
-  hosts: tomcat_server
-  become: yes
-  roles:
-    - java_tomcat
-
-- name: Setup MySQL
+- name: Setup MySQL Server
   hosts: mysql_server
-  become: yes
+  become: true
   roles:
     - mysql
 
-- name: Setup Maven
+- name: Setup Maven Build Server
   hosts: maven_server
-  become: yes
+  become: true
   roles:
     - maven
+
+- name: Setup Tomcat Server
+  hosts: tomcat_server
+  become: true
+  vars:
+    maven_host: "{{ groups['maven'][0] }}"
+  roles:
+    - java
+    - deploy
