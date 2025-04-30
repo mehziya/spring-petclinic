@@ -113,35 +113,35 @@ pipeline {
 }
 
 
-        stage('Server Setup with Ansible') {
+               stage('Run Ansible Setup') {
             steps {
-                sh 'ansible-playbook -i ansible/inventory.ini ansible/setup.yml'
+                script {
+                    sh """
+                        ansible-playbook -i inventory setup.yml
+                    """
+                }
             }
         }
 
-        stage('Build Application on Maven Server') {
+        stage('Build WAR with Maven') {
             steps {
-                sh '''
-                ansible maven_server -i ansible/inventory.ini -m shell -a '
-                    cd /home/ubuntu/spring-petclinic &&
-                    mvn clean package
-                '
-                '''
+                script {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no -i ${SSH_PRIVATE_KEY_PATH} ubuntu@\$(terraform output -raw maven_server_ip) '
+                            cd /home/ubuntu/app &&
+                            mvn clean package
+                        '
+                    """
+                }
             }
         }
 
         stage('Deploy WAR to Tomcat') {
             steps {
                 script {
-                    def tomcatIp = sh(script: "terraform output -raw tomcat_server_ip", returnStdout: true).trim()
-                    def mavenIp = sh(script: "terraform output -raw maven_server_ip", returnStdout: true).trim()
-
                     sh """
-                    ssh -o StrictHostKeyChecking=no -i ${SSH_PRIVATE_KEY_PATH} ubuntu@${mavenIp} \
-                        'scp -o StrictHostKeyChecking=no /home/ubuntu/spring-petclinic/target/spring-petclinic.war ubuntu@${tomcatIp}:/opt/tomcat/webapps/'
+                        ansible-playbook -i inventory deploy.yml
                     """
-
-                    sh "ansible tomcat_server -i ansible/inventory.ini -m systemd -a 'name=tomcat state=restarted'"
                 }
             }
         }
@@ -149,10 +149,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Deployment completed successfully!"
+            echo '✅ Pipeline executed successfully!'
         }
         failure {
-            echo "❌ Deployment failed!"
+            echo '❌ Pipeline failed. Check logs for details.'
         }
     }
 }
