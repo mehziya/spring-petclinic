@@ -10,14 +10,25 @@
     state: started
     enabled: yes
 
-- name: Create application DB and user
-  mysql_db:
-    name: petclinic
+- name: Install PyMySQL using apt
+  apt:
+    name: python3-pymysql
     state: present
+    update_cache: yes
+
+
+- name: Create application DB
+  mysql_db:
+    name: myappdb
+    state: present
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  become: true
 
 - name: Create application DB user
   mysql_user:
-    name: petclinic_user
-    password: petclinic_pass
-    priv: 'petclinic.*:ALL'
+    name: myappuser
+    password: myapppassword
+    priv: 'myappdb.*:ALL'
     state: present
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  become: true
