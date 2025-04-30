@@ -7,7 +7,7 @@ resource "aws_instance" "tomcat_server" {
   security_groups = ["sgalltraffic"]  # Reference the existing security group
   key_name      = "mujahed"
   tags = {
-    Name = "Tomcat-Server"
+    Name = "tomcat_server"
   }
 }
 resource "aws_instance" "mysql_server"{
@@ -16,7 +16,7 @@ resource "aws_instance" "mysql_server"{
     security_groups = ["sgalltraffic"]  # Reference the existing security group
     key_name      = "mujahed"
     tags = {
-      Name = "mysql_server-Server"
+      Name = "mysql_server"
   }
 }
 resource "aws_instance" "maven_server"{
@@ -25,7 +25,7 @@ resource "aws_instance" "maven_server"{
     security_groups = ["sgalltraffic"]  # Reference the existing security group
     key_name      = "mujahed"
     tags = {
-      Name = "maven_server-Server"
+      Name = "maven_server"
   }
 }
 
@@ -38,3 +38,4 @@ output "mysql_server_ip" {
 output "maven_server_ip" {
   value = aws_instance.maven_server.public_ip
 }
+
