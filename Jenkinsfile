@@ -21,18 +21,16 @@ pipeline {
 
         stage('Setup Terraform') {
             steps {
-                script {
-                    sh '''
+                sh '''
                     terraform init
                     terraform apply -auto-approve
-                    '''
-                }
+                '''
             }
         }
 
         stage('Generate Inventory') {
             steps {
-                script {
+                withCredentials([sshUserPrivateKey(credentialsId: 'mujahed-ssh-key', keyFileVariable: 'SSH_KEY_FILE')]) {
                     sh """
                         echo "[tomcat_server]" > inventory
                         echo "\$(terraform output -raw tomcat_server_ip) ansible_user=ubuntu ansible_ssh_private_key_file=\${SSH_KEY_FILE} ansible_python_interpreter=/usr/bin/python3" >> inventory
@@ -52,12 +50,10 @@ pipeline {
         stage('Verify Ansible Connectivity') {
             steps {
                 script {
-                    // Fetch IP addresses from Terraform
                     def tomcatServerIp = sh(script: "terraform output -raw tomcat_server_ip", returnStdout: true).trim()
                     def mysqlServerIp = sh(script: "terraform output -raw mysql_server_ip", returnStdout: true).trim()
                     def mavenServerIp = sh(script: "terraform output -raw maven_server_ip", returnStdout: true).trim()
 
-                    // Map of servers
                     def servers = [
                         "tomcat_server": tomcatServerIp,
                         "mysql_server" : mysqlServerIp,
@@ -67,11 +63,9 @@ pipeline {
                     def retries = 0
                     def maxRetries = 30
                     def waitTime = 10
-
                     def reachableServers = [:]
                     servers.each { name, ip -> reachableServers[name] = false }
 
-                    // Retry loop
                     while (reachableServers.containsValue(false) && retries < maxRetries) {
                         servers.each { name, ip ->
                             if (!reachableServers[name]) {
@@ -97,14 +91,12 @@ pipeline {
                         }
                     }
 
-                    // Exit if any are still unreachable
                     if (reachableServers.containsValue(false)) {
                         error "Some EC2 instances are not reachable via SSH after ${maxRetries} attempts."
                     }
 
-                    // All reachable — run Ansible ping
                     echo "All servers are reachable via SSH. Running Ansible Ping..."
-                    withCredentials([sshUserPrivateKey(credentialsId: 'mujahed-ssh-key', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')]) {
+                    withCredentials([sshUserPrivateKey(credentialsId: 'mujahed-ssh-key', keyFileVariable: 'SSH_KEY_FILE')]) {
                         sh """
                             ansible -i inventory all -m ping
                         """
@@ -112,24 +104,20 @@ pipeline {
                 }
             }
         }
-    }
 
-
-               stage('Run Ansible Setup') {
+        stage('Run Ansible Setup') {
             steps {
-                script {
-                    sh """
-                        ansible-playbook -i inventory setup.yml
-                    """
-                }
+                sh """
+                    ansible-playbook -i inventory setup.yml
+                """
             }
         }
 
         stage('Build WAR with Maven') {
             steps {
-                script {
+                withCredentials([sshUserPrivateKey(credentialsId: 'mujahed-ssh-key', keyFileVariable: 'SSH_KEY_FILE', usernameVariable: 'SSH_USER')]) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_PRIVATE_KEY_PATH} ubuntu@\$(terraform output -raw maven_server_ip) '
+                        ssh -o StrictHostKeyChecking=no -i \$SSH_KEY_FILE \$SSH_USER@$(terraform output -raw maven_server_ip) '
                             cd /home/ubuntu/app &&
                             mvn clean package
                         '
@@ -140,11 +128,9 @@ pipeline {
 
         stage('Deploy WAR to Tomcat') {
             steps {
-                script {
-                    sh """
-                        ansible-playbook -i inventory deploy.yml
-                    """
-                }
+                sh """
+                    ansible-playbook -i inventory deploy.yml
+                """
             }
         }
     }
