@@ -3,7 +3,7 @@
     src: /home/ubuntu/app/target/yourapp.war
     dest: /tmp/yourapp.war
     flat: yes
-  delegate_to: "{{ groups['maven'][0] }}"
+  delegate_to: "{{ groups['maven_server'][0] }}"
 
 - name: Check if WAR file exists
   stat:
