@@ -113,7 +113,7 @@ pipeline {
             }
         }
     }
-}
+
 
                stage('Run Ansible Setup') {
             steps {
