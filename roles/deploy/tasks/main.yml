@@ -1,13 +1,13 @@
 - name: Fetch WAR from Maven server
   fetch:
-    src: /home/ubuntu/app/target/yourapp.war
-    dest: /tmp/yourapp.war
+    src: /home/ubuntu/app/target/app.war
+    dest: /tmp/app.war
     flat: yes
   delegate_to: "{{ groups['maven_server'][0] }}"
 
 - name: Check if WAR file exists
   stat:
-    path: /tmp/yourapp.war
+    path: /tmp/app.war
   register: war_file_stat
 
 - name: Fail if WAR file does not exist
@@ -16,35 +16,51 @@
   when: not war_file_stat.stat.exists
 
 - name: Stop Tomcat
+  become: true
   systemd:
     name: tomcat
     state: stopped
     enabled: yes
 
 - name: Remove old WAR file from Tomcat webapps
+  become: true
   file:
-    path: /opt/tomcat/webapps/yourapp.war
+    path: /opt/tomcat/webapps/app.war
+    state: absent
+
+- name: Remove exploded WAR directory
+  become: true
+  file:
+    path: /opt/tomcat/webapps/app
     state: absent
 
 - name: Copy WAR to Tomcat
+  become: true
   copy:
-    src: /tmp/yourapp.war
-    dest: /opt/tomcat/webapps/yourapp.war
-    owner: ubuntu
-    group: ubuntu
+    src: /tmp/app.war
+    dest: /opt/tomcat/webapps/app.war
+    owner: tomcat
+    group: tomcat
     mode: '0644'
 
-- name: Update application.properties for MySQL IP
+# Optional: Wait for WAR to explode and then update config inside it (only if not done pre-build)
+# - name: Wait for WAR to deploy and explode
+#   wait_for:
+#     path: /opt/tomcat/webapps/app/WEB-INF/classes/application.properties
+#     state: present
+#     delay: 10
+#     timeout: 60
+
+- name: Update application.properties for MySQL IP (only works after WAR exploded)
+  become: true
   lineinfile:
-    path: /opt/tomcat/webapps/yourapp/WEB-INF/classes/application.properties
+    path: /opt/tomcat/webapps/app/WEB-INF/classes/application.properties
     regexp: '^spring.datasource.url='
     line: 'spring.datasource.url=jdbc:mysql://{{ hostvars[groups["mysql_server"][0]]["ansible_host"] }}:3306/yourdb'
 
 - name: Start Tomcat
+  become: true
   systemd:
     name: tomcat
     state: started
     enabled: yes
-
-
-
