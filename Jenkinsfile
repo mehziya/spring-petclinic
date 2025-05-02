@@ -123,18 +123,20 @@ stage('Verify Ansible Connectivity') {
             }
         }
 
-        stage('Build WAR with Maven') {
-            steps {
-                script {
-                    sh """
-                        ssh -o StrictHostKeyChecking=no -i ${SSH_PRIVATE_KEY_PATH} ubuntu@\$(terraform output -raw maven_server_ip) '
-                            cd /home/ubuntu/app &&
-                            mvn clean package
-                        '
-                    """
-                }
-            }
+       stage('Build WAR with Maven') {
+    steps {
+        script {
+            sh """
+                ssh -o StrictHostKeyChecking=no -i ${SSH_PRIVATE_KEY_PATH} ubuntu@\$(terraform output -raw maven_server_ip) '
+                    cd /home/ubuntu/app &&
+                    mvn clean package &&
+                    mv target/app.jar target/app.war
+                '
+            """
         }
+    }
+}
+
 
 
         stage('Deploy WAR to Tomcat') {
