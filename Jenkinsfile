@@ -130,7 +130,7 @@ stage('Verify Ansible Connectivity') {
                 ssh -o StrictHostKeyChecking=no -i ${SSH_PRIVATE_KEY_PATH} ubuntu@\$(terraform output -raw maven_server_ip) '
                     cd /home/ubuntu/app &&
                     mvn clean package &&
-                    mv target/app.jar target/app.war
+                    mv target/spring-petclinic-3.4.0-SNAPSHOT.jar target/spring-petclinic-3.4.0-SNAPSHOT.war
                 '
             """
         }
